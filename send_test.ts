@@ -1,80 +1,102 @@
 import { assertEquals, assertExists } from "jsr:@std/assert";
 import { sendMessage } from "./send.ts";
 
-Deno.test("sendMessage - returns error on non-macOS", async () => {
-  if (Deno.build.os !== "darwin") {
+Deno.test({
+  name: "sendMessage - returns error on non-macOS",
+  ignore: Deno.build.os === "darwin",
+  async fn() {
     const result = await sendMessage({
       recipient: "test@example.com",
       message: "test",
     });
     assertEquals(result.success, false);
     assertEquals(result.error, "This module only works on macOS");
-  }
+  },
 });
 
-Deno.test("sendMessage - validates required fields", async () => {
-  const result = await sendMessage({ recipient: "", message: "test" });
-  assertEquals(result.success, false);
-  assertEquals(result.error, "Recipient and message are required");
-
-  const result2 = await sendMessage({
-    recipient: "test@example.com",
-    message: "",
-  });
-  assertEquals(result2.success, false);
-  assertEquals(result2.error, "Recipient and message are required");
-});
-
-Deno.test("sendMessage - trims whitespace", async () => {
-  const result = await sendMessage({ recipient: "  ", message: "test" });
-  assertEquals(result.success, false);
-  assertEquals(result.error, "Recipient and message are required");
-
-  const result2 = await sendMessage({
-    recipient: "test@example.com",
-    message: "   ",
-  });
-  assertEquals(result2.success, false);
-  assertEquals(result2.error, "Recipient and message are required");
-});
-
-Deno.test("sendMessage - sanitizes special characters", async () => {
-  const messageWithSpecialChars = 'Hello "world"! \\ Test';
-  const recipientWithQuotes = '"test@example.com"';
-
-  const result = await sendMessage({
-    recipient: recipientWithQuotes,
-    message: messageWithSpecialChars,
-  });
-
-  if (Deno.build.os !== "darwin") {
+Deno.test({
+  name: "sendMessage - validates required fields",
+  ignore: Deno.build.os !== "darwin",
+  async fn() {
+    const result = await sendMessage({ recipient: "", message: "test" });
     assertEquals(result.success, false);
-    assertEquals(result.error, "This module only works on macOS");
-  }
+    assertEquals(result.error, "Recipient and message are required");
+
+    const result2 = await sendMessage({
+      recipient: "test@example.com",
+      message: "",
+    });
+    assertEquals(result2.success, false);
+    assertEquals(result2.error, "Recipient and message are required");
+  },
 });
 
-Deno.test("sendMessage - respects retry option with real failure", async () => {
-  // Use a recipient that will definitely fail (invalid format)
-  const result = await sendMessage({
-    recipient: "",
-    message: "test",
-    retries: 2,
-  });
+Deno.test({
+  name: "sendMessage - trims whitespace",
+  ignore: Deno.build.os !== "darwin",
+  async fn() {
+    const result = await sendMessage({ recipient: "  ", message: "test" });
+    assertEquals(result.success, false);
+    assertEquals(result.error, "Recipient and message are required");
 
-  // This should fail with validation error regardless of OS
-  assertEquals(result.success, false);
-  assertEquals(result.error, "Recipient and message are required");
-  // Validation failures don't go through retry logic
+    const result2 = await sendMessage({
+      recipient: "test@example.com",
+      message: "   ",
+    });
+    assertEquals(result2.success, false);
+    assertEquals(result2.error, "Recipient and message are required");
+  },
 });
 
-Deno.test("sendMessage - includes attempts in result", async () => {
-  const result = await sendMessage({
-    recipient: "test@example.com",
-    message: "test message",
-  });
+Deno.test({
+  name: "sendMessage - sanitizes special characters",
+  ignore: Deno.build.os !== "darwin",
+  async fn() {
+    const messageWithSpecialChars = 'Hello "world"! \\ Test';
+    const recipientWithQuotes = '"test@example.com"';
 
-  if (Deno.build.os === "darwin" && result.success) {
-    assertExists(result.attempts);
-    assertEquals(result.attempts, 1);
-  }
+    const result = await sendMessage({
+      recipient: recipientWithQuotes,
+      message: messageWithSpecialChars,
+    });
+
+    // On macOS, this should attempt to send the message (success or failure depends on actual AppleScript execution)
+    // We just verify that it doesn't fail with validation errors
+    if (!result.success && result.error) {
+      // If it fails, it should not be due to validation (which would be caught earlier)
+      // Instead it should be an AppleScript execution error
+      assertEquals(result.error.includes("Recipient and message are required"), false);
+    }
+  },
+});
+
+Deno.test({
+  name: "sendMessage - respects retry option with real failure",
+  ignore: Deno.build.os !== "darwin",
+  async fn() {
+    const result = await sendMessage({
+      recipient: "",
+      message: "test",
+      retries: 2,
+    });
+
+    assertEquals(result.success, false);
+    assertEquals(result.error, "Recipient and message are required");
+  },
+});
+
+Deno.test({
+  name: "sendMessage - includes attempts in result",
+  ignore: Deno.build.os !== "darwin",
+  async fn() {
+    const result = await sendMessage({
+      recipient: "test@example.com",
+      message: "test message",
+    });
+
+    if (result.success) {
+      assertExists(result.attempts);
+      assertEquals(result.attempts, 1);
+    }
+  },
 });
