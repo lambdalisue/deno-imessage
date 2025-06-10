@@ -1,6 +1,6 @@
 #!/usr/bin/env -S deno run --allow-run
 
-import { parseArgs } from "jsr:@std/cli/parse-args";
+import { parseArgs } from "@std/cli/parse-args";
 import { sendMessage } from "./mod.ts";
 
 const args = parseArgs(Deno.args, {
