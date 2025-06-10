@@ -65,7 +65,10 @@ Deno.test({
     if (!result.success && result.error) {
       // If it fails, it should not be due to validation (which would be caught earlier)
       // Instead it should be an AppleScript execution error
-      assertEquals(result.error.includes("Recipient and message are required"), false);
+      assertEquals(
+        result.error.includes("Recipient and message are required"),
+        false,
+      );
     }
   },
 });
