@@ -5,9 +5,9 @@ code in this repository.
 
 ## Project Overview
 
-This is a Deno project for Apple Message integration
-(`@lambdalisue/imessage`). The project is in its initial setup phase with
-the main module expected at `mod.ts`.
+This is a Deno project for Apple Message integration (`@lambdalisue/imessage`).
+The project is in its initial setup phase with the main module expected at
+`mod.ts`.
 
 ## Common Development Commands
 
